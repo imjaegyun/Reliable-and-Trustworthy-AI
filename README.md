@@ -35,18 +35,9 @@ assignment1/
 - Python 3.10 recommended
 - `pip` or `conda`
 
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-From the project root:
-
-
 ## How To Run
 
 ```bash
-python test.py
+chmod +x setup_and_run.sh
+./setup_and_run.sh
 ```
