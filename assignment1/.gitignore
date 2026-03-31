@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+
+# Local training artifacts
+*.pth
+
+# Downloaded datasets
+data/
+problem1/data/
+problem2/data/
+problem3/data/
