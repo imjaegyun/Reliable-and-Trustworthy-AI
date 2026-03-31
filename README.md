@@ -38,6 +38,8 @@ assignment1/
 ## How To Run
 
 ```bash
+git clone https://github.com/imjaegyun/Reliable-and-Trustworthy-AI.git
+cd Reliable-and-Trustworthy-AI/assignment1
 chmod +x setup_and_run.sh
 ./setup_and_run.sh
 ```
