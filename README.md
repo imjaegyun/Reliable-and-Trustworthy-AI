@@ -27,13 +27,14 @@ assignment1/
 └── problem3/
     ├── attacks.py
     └── test.py
+```
 
 ## Requirements
 
 - Python 3.10 recommended
 - `pip` or `conda`
 
-```
+
 Install dependencies:
 
 ```bash
