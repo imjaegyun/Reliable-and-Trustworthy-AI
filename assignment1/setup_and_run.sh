@@ -7,26 +7,27 @@ ENV_NAME="assignment1"
 PYTHON_VERSION="3.10"
 CUDA_TAG=""
 SETUP_ONLY=0
-REINSTALL_TORCH=0
 TEST_ARGS=()
+PYTORCH_VERSION="2.5.1"
+TORCHVISION_VERSION="0.20.1"
 
 usage() {
     cat <<'EOF'
 Usage:
-  bash setup_and_run.sh [script-options] [test.py options]
+  ./setup_and_run.sh [script-options] [test.py options]
 
 Script options:
   --env NAME         Conda environment name (default: assignment1)
   --python VERSION   Python version for the conda env (default: 3.10)
-  --cuda TAG         Install CUDA PyTorch wheels first (example: cu124)
+  --cuda TAG         CUDA runtime for PyTorch (examples: 12.4, 12.1, cu124, cpu)
   --setup-only       Create/update the environment and install packages only
-  --reinstall-torch  Reinstall torch/torchvision before installing requirements
   -h, --help         Show this help message
 
 Examples:
-  bash setup_and_run.sh --fast
-  bash setup_and_run.sh --env viscot-a1 --cuda cu124 --fast
-  bash setup_and_run.sh --setup-only
+  ./setup_and_run.sh
+  ./setup_and_run.sh --fast
+  ./setup_and_run.sh --cuda 12.1 --fast
+  ./setup_and_run.sh --setup-only
 
 Any unrecognized arguments are forwarded to test.py.
 EOF
@@ -50,10 +51,6 @@ while (($#)); do
             SETUP_ONLY=1
             shift
             ;;
-        --reinstall-torch)
-            REINSTALL_TORCH=1
-            shift
-            ;;
         -h|--help)
             usage
             exit 0
@@ -70,6 +67,60 @@ if ! command -v conda >/dev/null 2>&1; then
     exit 1
 fi
 
+normalize_cuda_tag() {
+    local raw="$1"
+    case "$raw" in
+        "" )
+            echo ""
+            ;;
+        cpu|CPU )
+            echo "cpu"
+            ;;
+        12.4|cu124|CU124 )
+            echo "12.4"
+            ;;
+        12.1|cu121|CU121 )
+            echo "12.1"
+            ;;
+        11.8|cu118|CU118 )
+            echo "11.8"
+            ;;
+        * )
+            echo "$raw"
+            ;;
+    esac
+}
+
+detect_default_cuda_tag() {
+    local driver_version
+    local driver_major
+
+    if ! command -v nvidia-smi >/dev/null 2>&1; then
+        echo "cpu"
+        return
+    fi
+
+    driver_version="$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -n1 | tr -d ' ')"
+    if [[ -z "$driver_version" ]]; then
+        echo "12.1"
+        return
+    fi
+
+    driver_major="${driver_version%%.*}"
+
+    if [[ "$driver_major" =~ ^[0-9]+$ ]]; then
+        if (( driver_major >= 550 )); then
+            echo "12.4"
+        elif (( driver_major >= 530 )); then
+            echo "12.1"
+        else
+            echo "11.8"
+        fi
+    else
+        echo "12.1"
+    fi
+}
+
 env_exists=0
 if conda env list | awk 'NF && $1 !~ /^#/ {print $1}' | grep -Fxq "$ENV_NAME"; then
     env_exists=1
@@ -84,23 +135,75 @@ fi
 
 CONDA_RUN=(conda run --no-capture-output -n "$ENV_NAME")
 
+if [[ -z "$CUDA_TAG" ]]; then
+    CUDA_TAG="$(detect_default_cuda_tag)"
+fi
+
+CUDA_TAG="$(normalize_cuda_tag "$CUDA_TAG")"
+
+echo "[INFO] Verifying conda environment before package install"
+"${CONDA_RUN[@]}" python -c "
+import os
+import sys
+
+print(
+    '[INFO] Env ready | '
+    f'env=${ENV_NAME} | '
+    f'python={sys.executable} | '
+    f'python_version={sys.version.split()[0]} | '
+    f'conda_prefix={os.environ.get(\"CONDA_PREFIX\", \"unknown\")} | '
+    f'requested_cuda=${CUDA_TAG}'
+)
+"
+
 echo "[INFO] Upgrading pip in $ENV_NAME"
 "${CONDA_RUN[@]}" python -m pip install --upgrade pip
 
-if [[ "$REINSTALL_TORCH" -eq 1 ]]; then
-    echo "[INFO] Reinstalling torch/torchvision"
-    "${CONDA_RUN[@]}" python -m pip uninstall -y torch torchvision || true
-fi
+echo "[INFO] Removing conflicting torch packages if present"
+"${CONDA_RUN[@]}" python -m pip uninstall -y torch torchvision torchaudio >/dev/null 2>&1 || true
+conda remove -y -n "$ENV_NAME" pytorch torchvision torchaudio pytorch-cuda cpuonly >/dev/null 2>&1 || true
 
-if [[ -n "$CUDA_TAG" ]]; then
-    echo "[INFO] Installing CUDA-enabled torch/torchvision from PyTorch index: $CUDA_TAG"
-    "${CONDA_RUN[@]}" python -m pip install --upgrade \
-        --index-url "https://download.pytorch.org/whl/${CUDA_TAG}" \
-        torch torchvision
+if [[ "$CUDA_TAG" == "cpu" ]]; then
+    echo "[INFO] Installing CPU PyTorch in $ENV_NAME"
+    conda install -y -n "$ENV_NAME" -c pytorch \
+        "pytorch=${PYTORCH_VERSION}" "torchvision=${TORCHVISION_VERSION}" cpuonly
+else
+    echo "[INFO] Installing PyTorch with pytorch-cuda=$CUDA_TAG in $ENV_NAME"
+    conda install -y -n "$ENV_NAME" -c pytorch -c nvidia \
+        "pytorch=${PYTORCH_VERSION}" "torchvision=${TORCHVISION_VERSION}" "pytorch-cuda=${CUDA_TAG}"
 fi
 
 echo "[INFO] Installing project requirements"
 "${CONDA_RUN[@]}" python -m pip install -r "$ROOT_DIR/requirements.txt"
+
+echo "[INFO] Verifying PyTorch runtime inside conda environment"
+"${CONDA_RUN[@]}" python -c '
+import sys
+import torch
+
+cuda_available = torch.cuda.is_available()
+device_count = torch.cuda.device_count() if cuda_available else 0
+current_device = torch.cuda.current_device() if cuda_available else "cpu"
+
+print(
+    "[INFO] Env check | "
+    f"python={sys.executable} | "
+    f"torch={torch.__version__} | "
+    f"torch_cuda={torch.version.cuda} | "
+    f"cuda_available={cuda_available} | "
+    f"device_count={device_count} | "
+    f"current_device={current_device}"
+)
+'
+
+if [[ "$CUDA_TAG" != "cpu" ]]; then
+    CUDA_OK="$("${CONDA_RUN[@]}" python -c 'import torch; print("1" if torch.cuda.is_available() else "0")')"
+    if [[ "$CUDA_OK" != "1" ]]; then
+        echo "[WARN] CUDA runtime was requested, but torch.cuda.is_available() is False in $ENV_NAME"
+        echo "[WARN] This usually means the selected runtime is newer than the installed NVIDIA driver."
+        echo "[WARN] Try rerunning with a lower runtime, for example: ./setup_and_run.sh --cuda 12.1"
+    fi
+fi
 
 if [[ "$SETUP_ONLY" -eq 1 ]]; then
     echo "[INFO] Environment setup complete."

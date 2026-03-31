@@ -1,16 +1,13 @@
 # Assignment 1 dependencies
 #
 # Tested with Python 3.10.
-# For most environments, this is enough:
+# Install PyTorch first, then install this file:
 #   pip install -r requirements.txt
 #
-# If you want a CUDA-enabled PyTorch build, install the matching torch/torchvision
-# wheels first from the official PyTorch index, then run:
-#   pip install -r requirements.txt
+# The provided setup_and_run.sh script installs a compatible PyTorch runtime
+# automatically, then installs the packages below.
 
 numpy>=1.24,<3.0
 matplotlib>=3.7,<4.0
 tqdm>=4.65,<5.0
 Pillow>=10.0,<13.0
-torch>=2.1,<3.0
-torchvision>=0.16,<1.0
