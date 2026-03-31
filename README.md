@@ -27,6 +27,12 @@ assignment1/
 └── problem3/
     ├── attacks.py
     └── test.py
+
+## Requirements
+
+- Python 3.10 recommended
+- `pip` or `conda`
+
 ```
 Install dependencies:
 
@@ -34,8 +40,11 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
+From the project root:
 
-## Requirements
 
-- Python 3.10 recommended
-- `pip` or `conda`
+## How To Run
+
+```bash
+python test.py
+```
