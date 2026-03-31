@@ -82,31 +82,33 @@ else
     echo "[INFO] Reusing existing conda environment: $ENV_NAME"
 fi
 
+CONDA_RUN=(conda run --no-capture-output -n "$ENV_NAME")
+
 echo "[INFO] Upgrading pip in $ENV_NAME"
-conda run -n "$ENV_NAME" python -m pip install --upgrade pip
+"${CONDA_RUN[@]}" python -m pip install --upgrade pip
 
 if [[ "$REINSTALL_TORCH" -eq 1 ]]; then
     echo "[INFO] Reinstalling torch/torchvision"
-    conda run -n "$ENV_NAME" python -m pip uninstall -y torch torchvision || true
+    "${CONDA_RUN[@]}" python -m pip uninstall -y torch torchvision || true
 fi
 
 if [[ -n "$CUDA_TAG" ]]; then
     echo "[INFO] Installing CUDA-enabled torch/torchvision from PyTorch index: $CUDA_TAG"
-    conda run -n "$ENV_NAME" python -m pip install --upgrade \
+    "${CONDA_RUN[@]}" python -m pip install --upgrade \
         --index-url "https://download.pytorch.org/whl/${CUDA_TAG}" \
         torch torchvision
 fi
 
 echo "[INFO] Installing project requirements"
-conda run -n "$ENV_NAME" python -m pip install -r "$ROOT_DIR/requirements.txt"
+"${CONDA_RUN[@]}" python -m pip install -r "$ROOT_DIR/requirements.txt"
 
 if [[ "$SETUP_ONLY" -eq 1 ]]; then
     echo "[INFO] Environment setup complete."
     echo "[INFO] Run the project with:"
-    echo "       conda run -n $ENV_NAME python $ROOT_DIR/test.py"
+    echo "       conda run --no-capture-output -n $ENV_NAME python $ROOT_DIR/test.py"
     exit 0
 fi
 
 echo "[INFO] Running assignment test.py"
-echo "[INFO] Command: conda run -n $ENV_NAME python $ROOT_DIR/test.py ${TEST_ARGS[*]:-}"
-conda run -n "$ENV_NAME" python "$ROOT_DIR/test.py" "${TEST_ARGS[@]}"
+echo "[INFO] Command: conda run --no-capture-output -n $ENV_NAME python $ROOT_DIR/test.py ${TEST_ARGS[*]:-}"
+"${CONDA_RUN[@]}" python "$ROOT_DIR/test.py" "${TEST_ARGS[@]}"
