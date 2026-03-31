@@ -28,6 +28,11 @@ assignment1/
     ├── attacks.py
     └── test.py
 ```
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
 
 
 ## Requirements
