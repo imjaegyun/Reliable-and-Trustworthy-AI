@@ -11,6 +11,7 @@ Datasets:
 
 ## Project Structure
 
+```text
 assignment1/
 ├── assignment1.pdf
 ├── models.py
@@ -26,6 +27,7 @@ assignment1/
 └── problem3/
     ├── attacks.py
     └── test.py
+```
 
 
 ## Requirements
