@@ -2,9 +2,8 @@
 attacks.py — 적대적 공격 구현
 
 Problem 1: Targeted FGSM   → fgsm_targeted()
-Problem 2: Untargeted FGSM → fgsm_untargeted()   [이후 구현 예정]
-Problem 3: PGD              → pgd_targeted(), pgd_untargeted()  [이후 구현 예정]
-
+Problem 2: Untargeted FGSM → fgsm_untargeted()  
+Problem 3: PGD              → pgd_targeted(), pgd_untargeted()  
 참고 논문:
   - FGSM: Goodfellow et al., "Explaining and Harnessing Adversarial Examples", ICLR 2015.
           https://arxiv.org/abs/1412.6572
