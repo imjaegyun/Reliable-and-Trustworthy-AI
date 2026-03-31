@@ -1,1 +1,1 @@
-# Reliable-and-Trustworthy-AI
+# Assignment 1: Adversarial Attacks
