@@ -87,30 +87,3 @@ def fgsm_targeted(model, x, target, eps):
     return x_adv.detach()
 
 
-# ============================================================
-# Problem 2: Untargeted FGSM  (이후 구현 예정)
-# ============================================================
-
-# def fgsm_untargeted(model, x, label, eps):
-#     """
-#     Untargeted FGSM: 정답 클래스 손실을 최대화 (+ε)
-#     x_adv = clamp(x + eps * sign(grad_x L(f(x), y_true)), 0, 1)
-#     """
-#     pass
-
-
-# ============================================================
-# Problem 3: PGD  (이후 구현 예정)
-# ============================================================
-
-# def pgd_targeted(model, x, target, k, eps, eps_step):
-#     """
-#     Targeted PGD: fgsm_targeted를 k번 반복, eps-ball 투영
-#     """
-#     pass
-
-# def pgd_untargeted(model, x, label, k, eps, eps_step):
-#     """
-#     Untargeted PGD: fgsm_untargeted를 k번 반복, eps-ball 투영
-#     """
-#     pass
